@@ -1,0 +1,96 @@
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String
+  webhookUrl String?
+  fbUserId   String?
+  fbName     String?
+  fbImage    String?
+  createdAt  DateTime @default(now())
+  pages      Page[]
+  workflows  Workflow[]
+}
+
+model Page {
+  id           String   @id // Facebook Page ID
+  name         String
+  accessToken  String
+  sub          String?  // Subscription identifier or status
+  statusDetails String? // Error details if sub is FAILED
+  fbUserId     String?  // Added for grouping multiple FB accounts
+  fbUserName   String?  // Added for visual grouping
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  forms        Form[]
+  workflows    Workflow[]
+  createdAt    DateTime @default(now())
+}
+
+model Form {
+  id        String   @id // Facebook Lead Form ID
+  name      String
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id])
+  leads     Lead[]
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+  source      String   @default("facebook")
+  active      Boolean  @default(true)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  pageId      String?
+  page        Page?    @relation(fields: [pageId], references: [id])
+  rules       String // JSON blob of rules/actions
+  executions  WorkflowExecution[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Lead {
+  id           String   @id @default(cuid())
+  facebookId   String   @unique
+  formId       String
+  form         Form     @relation(fields: [formId], references: [id])
+  data         String // JSON of lead data
+  createdAt    DateTime @default(now())
+  executions   WorkflowExecution[]
+}
+
+model WorkflowExecution {
+  id          String   @id @default(cuid())
+  workflowId  String
+  workflow    Workflow @relation(fields: [workflowId], references: [id])
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  status      String // PENDING, SUCCESS, FAILED
+  logs        String // JSON of action results
+  retryCount  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Job {
+  id        String   @id @default(cuid())
+  type      String // EXECUTE_WORKFLOW
+  payload   String // JSON
+  status    String // PENDING, PROCESSING, COMPLETED, FAILED
+  attempts  Int      @default(0)
+  maxAttempts Int    @default(3)
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
