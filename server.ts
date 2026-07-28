@@ -10,21 +10,32 @@ import axios from "axios";
 import dotenv from "dotenv";
 import fs from "fs";
 import cookieParser from "cookie-parser";
+import bcrypt from "bcryptjs";
 
 dotenv.config();
 
-// Simple logger to file for debugging
-const logStream = fs.createWriteStream(path.join(process.cwd(), "debug.log"), { flags: "a" });
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+// Logger: in production (Cloud Run) write only to stdout; locally also write to debug.log
+let logStream: fs.WriteStream | null = null;
+if (!IS_PRODUCTION) {
+  try {
+    logStream = fs.createWriteStream(path.join(process.cwd(), "debug.log"), { flags: "a" });
+  } catch {
+    // ignore if not writable
+  }
+}
+
 function debugLog(msg: string) {
   // IST is UTC + 5:30
   const now = new Date();
   const istOffset = 5.5 * 60 * 60 * 1000;
   const istDate = new Date(now.getTime() + istOffset);
   const timestamp = istDate.toISOString().replace('Z', '').replace('T', ' ') + ' [IST]';
-  
+
   const formattedMsg = `[${timestamp}] ${msg}\n`;
   console.log(msg);
-  logStream.write(formattedMsg);
+  if (logStream) logStream.write(formattedMsg);
 }
 
 declare module 'express-session' {
@@ -45,7 +56,7 @@ const APP_URL = process.env.APP_URL || "";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Verify DB connection on startup
   try {
@@ -112,11 +123,16 @@ async function startServer() {
   // Authentication Mock (for MVP simplicity)
   app.post("/api/auth/login", async (req, res) => {
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
     debugLog(`Login attempt: ${email}`);
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      user = await prisma.user.create({ data: { email, password: password || "sss" } });
+      const hashed = await bcrypt.hash(password, 10);
+      user = await prisma.user.create({ data: { email, password: hashed } });
       debugLog(`New user created: ${user.id}`);
+    } else {
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) return res.status(401).json({ error: "Invalid credentials" });
     }
     (req.session as any).userId = user.id;
     res.json(user);
@@ -480,6 +496,7 @@ async function startServer() {
 
   // Fetch debug logs
   app.get("/api/debug/logs", (req, res) => {
+    if (IS_PRODUCTION) return res.send("Log file unavailable in production. Use Cloud Logging (GCP Console).");
     try {
       const logs = fs.readFileSync(path.join(process.cwd(), "debug.log"), "utf-8");
       res.send(logs);
@@ -490,6 +507,7 @@ async function startServer() {
 
   // Clear debug logs
   app.post("/api/debug/logs/clear", (req, res) => {
+    if (IS_PRODUCTION) return res.json({ success: true, note: "No log file in production." });
     try {
       fs.writeFileSync(path.join(process.cwd(), "debug.log"), "");
       debugLog("Log history cleared by admin.");
