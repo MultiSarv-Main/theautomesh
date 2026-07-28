@@ -97,21 +97,9 @@ export default function App() {
   };
 
   const handleLogin = async () => {
-    try {
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "rr", password: "sss" }),
-        credentials: 'include'
-      });
-      if (loginRes.ok) {
-        setUser(await loginRes.json());
-        toast.success("Welcome back!");
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error("Login failed");
-    }
+    // Session is already set by AuthModals — just refresh user state
+    await fetchUser();
+    toast.success("Welcome back!");
   };
 
   const handleLogout = async () => {
@@ -182,71 +170,71 @@ export default function App() {
   if (!user) return <LandingPage onAuthSuccess={handleLogin} />;
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    <div className="flex h-screen bg-gray-50 text-gray-900 font-sans overflow-hidden">
       <Toaster position="top-right" />
       
       {/* Sidebar Navigation */}
-      <aside className="w-60 bg-slate-900 text-white flex flex-col shrink-0">
-        <div className="p-6 flex items-center gap-3 border-b border-white/5">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-lg shadow-[0_0_15px_rgba(37,99,235,0.3)]">
-            <Zap size={20} className="text-white fill-white" />
+      <aside className="w-60 bg-white border-r border-gray-100 flex flex-col shrink-0 shadow-sm">
+        <div className="p-5 flex items-center gap-2.5 border-b border-gray-100">
+          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center shadow-lg shadow-violet-600/25">
+            <Zap size={18} className="text-white fill-white" />
           </div>
-          <span className="font-bold tracking-tight text-xl text-white">The AutoMesh</span>
+          <span className="font-bold tracking-tight text-lg text-gray-900">AutoMesh</span>
         </div>
         
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          <div className="text-xs font-semibold text-slate-500 uppercase px-3 py-2 mb-1">Management</div>
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+          <div className="text-[10px] font-bold text-gray-400 uppercase px-3 py-2 mt-1 mb-0.5 tracking-widest">Management</div>
           <NavItem active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")}>
-            <LayoutDashboard size={18} /> Dashboard
+            <LayoutDashboard size={16} /> Dashboard
           </NavItem>
           <NavItem active={activeTab === "workflows"} onClick={() => setActiveTab("workflows")}>
-            <Zap size={18} /> Workflows
+            <Zap size={16} /> Workflows
           </NavItem>
           <NavItem active={activeTab === "connections"} onClick={() => setActiveTab("connections")}>
-            <Link size={18} /> Meta Pages
+            <Link size={16} /> Meta Pages
           </NavItem>
           <NavItem active={activeTab === "others"} onClick={() => setActiveTab("others")}>
-            <Layers size={18} /> Global Integrations
+            <Layers size={16} /> Integrations
           </NavItem>
           <NavItem active={activeTab === "testing"} onClick={() => setActiveTab("testing")}>
-            <TestTube size={18} /> Testing Menu
+            <TestTube size={16} /> Testing
           </NavItem>
           <NavItem active={activeTab === "leads"} onClick={() => setActiveTab("leads")}>
-            <Users size={18} /> Lead Logs
+            <Users size={16} /> Lead Logs
           </NavItem>
 
-          <div className="text-xs font-semibold text-slate-500 uppercase px-3 py-2 mt-6 mb-1">Infrastructure</div>
+          <div className="text-[10px] font-bold text-gray-400 uppercase px-3 py-2 mt-4 mb-0.5 tracking-widest">System</div>
           <NavItem active={activeTab === "system"} onClick={() => setActiveTab("system")}>
-            <Wrench size={18} /> System Tools
+            <Wrench size={16} /> System Tools
           </NavItem>
           <NavItem active={false} onClick={() => {}}>
-            <Activity size={18} /> Hangfire Dashboard
+            <Activity size={16} /> Hangfire
           </NavItem>
           <NavItem active={activeTab === "api_explorer"} onClick={() => setActiveTab("api_explorer")}>
-             <History size={18} /> API Explorer
+             <History size={16} /> API Explorer
           </NavItem>
           <NavItem active={activeTab === "settings"} onClick={() => setActiveTab("settings")}>
-            <Settings size={18} /> Settings
+            <Settings size={16} /> Settings
           </NavItem>
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center justify-between px-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold uppercase">
+        <div className="p-3 border-t border-gray-100">
+          <div className="flex items-center justify-between px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-700 uppercase">
                 {user?.email?.substring(0, 2) || "AA"}
               </div>
-              <div className="text-[11px]">
-                <p className="font-medium text-slate-200 leading-none truncate max-w-[100px]">{user?.email || "Architect Admin"}</p>
-                <p className="text-slate-500 mt-1 uppercase text-[9px] tracking-wider font-bold">Enterprise Plan</p>
+              <div>
+                <p className="text-xs font-semibold text-gray-800 leading-none truncate max-w-[100px]">{user?.email || "Admin"}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">Free Plan</p>
               </div>
             </div>
             <button 
               onClick={handleLogout}
-              className="text-slate-500 hover:text-white transition-colors p-1"
+              className="text-gray-400 hover:text-gray-700 transition-colors p-1 rounded"
               title="Logout"
             >
-              <LogOut size={16} />
+              <LogOut size={15} />
             </button>
           </div>
         </div>
@@ -255,37 +243,33 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0">
+        <header className="h-14 bg-white border-b border-gray-100 px-6 flex items-center justify-between shrink-0">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">Pipeline Automation Console</h1>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Multi-tenant SaaS Instance: <span className="font-mono text-indigo-600 font-bold">Tenant_0042</span></p>
+            <h1 className="text-sm font-bold text-gray-900 capitalize">{activeTab === "api_explorer" ? "API Explorer" : activeTab}</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Button 
               onClick={() => {
                 setActiveTab("workflows");
                 setIsBuilderOpen(true);
                 setEditingWorkflow(null);
               }}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] uppercase tracking-widest px-4 h-9 shadow-lg shadow-indigo-900/10"
+              className="bg-violet-600 hover:bg-violet-700 text-white font-semibold text-xs px-4 h-8 rounded-lg shadow-sm"
             >
-              <Plus size={14} className="mr-2" /> Create Pipeline
+              <Plus size={14} className="mr-1.5" /> New Workflow
             </Button>
-            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
-              <Settings size={16} />
-            </div>
           </div>
         </header>
 
         {/* View Content */}
-        <div className="p-8 space-y-6 flex-1 overflow-hidden flex flex-col">
+        <div className="p-6 space-y-5 flex-1 overflow-hidden flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, scale: 0.99 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.99 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
               className="flex-1 flex flex-col min-h-0"
             >
               {activeTab === "dashboard" && <DashboardView workflows={workflows} connections={connections} />}
@@ -320,10 +304,10 @@ function NavItem({ active, children, onClick }: { active: boolean, children: Rea
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded transition-all duration-200 text-sm font-medium ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 text-sm font-medium ${
         active 
-          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/20" 
-          : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+          ? "bg-violet-50 text-violet-700 font-semibold" 
+          : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
       }`}
     >
       {children}
@@ -333,7 +317,7 @@ function NavItem({ active, children, onClick }: { active: boolean, children: Rea
 
 function DashboardView({ workflows, connections }: any) {
   return (
-    <div className="space-y-6 flex flex-col flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
+    <div className="space-y-5 flex flex-col flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
       {/* Metric Overview */}
       <div className="grid grid-cols-4 gap-4 shrink-0">
         <StatCard 
@@ -341,54 +325,58 @@ function DashboardView({ workflows, connections }: any) {
           value="1,248" 
           trend="+12% from yesterday" 
           trendColor="text-emerald-600" 
+          icon={<Users size={18} className="text-violet-600" />}
+          iconBg="bg-violet-50"
         />
         <StatCard 
-          title="Automation Success" 
+          title="Success Rate" 
           value="99.8%" 
           sub="Avg Latency: 420ms" 
           valueColor="text-emerald-600" 
+          icon={<Activity size={18} className="text-emerald-600" />}
+          iconBg="bg-emerald-50"
         />
         <StatCard 
-          title="Jobs in Hangfire" 
-          value="12 Active" 
-          sub="0 Retries pending" 
+          title="Active Jobs" 
+          value="12" 
+          sub="0 retries pending" 
+          icon={<Zap size={18} className="text-amber-600" />}
+          iconBg="bg-amber-50"
         />
         <StatCard 
-          title="FB Connections" 
-          value={`${connections.length} Active Pages`} 
-          sub="1 Token expires in 12d" 
-          subColor="text-amber-600 font-bold" 
+          title="Connections" 
+          value={`${connections.length}`}
+          sub="Pages connected" 
+          icon={<Link size={18} className="text-blue-600" />}
+          iconBg="bg-blue-50"
         />
       </div>
 
-      <div className="flex-1 flex gap-6 min-h-0">
-        <Card className="flex-[3] bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-          <CardHeader className="p-5 border-b border-slate-50 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Global Pipeline Throughput</CardTitle>
-            <span className="text-[10px] text-slate-400 font-mono italic">v1.4.2-stable.LTS</span>
+      <div className="flex-1 flex gap-5 min-h-0">
+        <Card className="flex-[3] bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
+          <CardHeader className="p-5 border-b border-gray-50 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-semibold text-gray-700">Pipeline Throughput</CardTitle>
+            <span className="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded">Live</span>
           </CardHeader>
           <CardContent className="flex-1 flex items-center justify-center p-6">
-             <div className="w-full h-full bg-slate-50/80 border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400">
-               <div className="relative mb-4">
-                 <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full"></div>
-                 <BarChart3 size={48} className="relative text-slate-300" />
-               </div>
-               <p className="text-[10px] font-bold uppercase tracking-tighter">Real-time Telemetry Processing...</p>
+             <div className="w-full h-full bg-gray-50 border border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-gray-400">
+               <BarChart3 size={40} className="text-gray-200 mb-3" />
+               <p className="text-xs font-medium text-gray-400">Analytics coming soon</p>
              </div>
           </CardContent>
         </Card>
 
-        <Card className="flex-[1.5] bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-          <CardHeader className="p-5 border-b border-slate-50">
-            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-slate-500">System Handshakes</CardTitle>
+        <Card className="flex-[1.5] bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
+          <CardHeader className="p-5 border-b border-gray-50">
+            <CardTitle className="text-sm font-semibold text-gray-700">System Status</CardTitle>
           </CardHeader>
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-4 space-y-3">
             <ConnectionRow name="Facebook Lead API" status="active" />
-            <ConnectionRow name="WhatsApp Business API" status="active" />
-            <ConnectionRow name="MS SQL Server Prod" status="active" />
-            <ConnectionRow name="Hangfire Scheduler" status="active" />
-            <ConnectionRow name="Smtp Relay Gateway" status="idle" />
-            <ConnectionRow name="Redis Data Store" status="active" />
+            <ConnectionRow name="WhatsApp Business" status="active" />
+            <ConnectionRow name="Database" status="active" />
+            <ConnectionRow name="Webhook Engine" status="active" />
+            <ConnectionRow name="SMTP Relay" status="idle" />
+            <ConnectionRow name="Cache Layer" status="active" />
           </CardContent>
         </Card>
       </div>
@@ -396,24 +384,29 @@ function DashboardView({ workflows, connections }: any) {
   );
 }
 
-function StatCard({ title, value, trend, sub, valueColor, trendColor, subColor }: any) {
+function StatCard({ title, value, trend, sub, valueColor, trendColor, subColor, icon, iconBg }: any) {
   return (
-    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md hover:border-slate-300 group">
-      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest transition-colors group-hover:text-indigo-600">{title}</p>
-      <p className={`text-2xl font-bold mt-2 tracking-tight ${valueColor || "text-slate-900"}`}>{value}</p>
-      {trend && <p className={`text-[10px] font-bold mt-1.5 ${trendColor || ""}`}>{trend}</p>}
-      {sub && <p className={`text-[10px] mt-1.5 ${subColor || "text-slate-400 font-medium"}`}>{sub}</p>}
+    <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-violet-100 transition-all group">
+      <div className="flex items-start justify-between mb-3">
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconBg || 'bg-gray-50'}`}>
+          {icon}
+        </div>
+      </div>
+      <p className={`text-2xl font-bold tracking-tight ${valueColor || "text-gray-900"}`}>{value}</p>
+      <p className="text-xs font-medium text-gray-500 mt-1">{title}</p>
+      {trend && <p className={`text-[11px] font-medium mt-1 ${trendColor || ""}`}>{trend}</p>}
+      {sub && <p className={`text-[11px] mt-1 ${subColor || "text-gray-400"}`}>{sub}</p>}
     </div>
   );
 }
 
 function ConnectionRow({ name, status }: { name: string, status: "active" | "idle" }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-      <span className="text-xs font-medium text-slate-600">{name}</span>
-      <div className="flex items-center gap-2">
-        <span className={`w-1.5 h-1.5 rounded-full ${status === "active" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300"}`} />
-        <span className={`text-[9px] uppercase font-bold ${status === "active" ? "text-emerald-600" : "text-slate-300"}`}>{status}</span>
+    <div className="flex items-center justify-between py-1.5">
+      <span className="text-xs text-gray-600">{name}</span>
+      <div className="flex items-center gap-1.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${status === "active" ? "bg-emerald-500" : "bg-gray-300"}`} />
+        <span className={`text-[10px] font-semibold ${status === "active" ? "text-emerald-600" : "text-gray-400"}`}>{status}</span>
       </div>
     </div>
   );
@@ -879,7 +872,7 @@ function WorkflowBuilder({ user, connections, onClose, onSave, initialData }: an
            {step < 3 ? (
              <Button onClick={() => setStep(step + 1)} className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase tracking-widest px-8 h-10">Next Stage</Button>
            ) : (
-             <Button onClick={handleSave} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] uppercase tracking-widest px-10 h-10 shadow-lg shadow-indigo-900/10">Deploy Pipeline</Button>
+             <Button onClick={handleSave}              className="bg-violet-600 hover:bg-violet-700 text-white font-bold text-[10px] uppercase tracking-widest px-8 h-10 shadow-sm">Deploy Pipeline</Button>
            )}
         </div>
       </div>

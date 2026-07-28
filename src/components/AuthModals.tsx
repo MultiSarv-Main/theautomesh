@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Mail, Lock, User, Zap, ArrowRight, Loader2 } from "lucide-react";
+import { X, Mail, Lock, User, Zap, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AuthModalProps {
@@ -12,25 +12,33 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, type: initialType, onSuccess }: AuthModalProps) {
   const [type, setType] = useState(initialType);
-  const [email, setEmail] = useState("rr");
-  const [password, setPassword] = useState("sss");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        credentials: "include"
       });
       if (response.ok) {
         onSuccess(email);
+        onClose();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || "Login failed. Please try again.");
       }
     } catch (err) {
       console.error("Auth error:", err);
+      setError("Network error. Please check your connection.");
     }
     
     setLoading(false);
@@ -45,80 +53,87 @@ export default function AuthModal({ isOpen, onClose, type: initialType, onSucces
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
           />
           
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl border border-white/10 bg-[#111] p-8 shadow-2xl"
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl shadow-gray-900/15 border border-gray-100 p-8 overflow-hidden"
           >
-            {/* Background Glow */}
-            <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 blur-[80px] pointer-events-none rounded-full" />
-            
+            {/* Top accent bar */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-t-2xl" />
+
             <button 
               onClick={onClose}
-              className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors"
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
-            <div className="mb-8">
-              <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-6">
-                <Zap size={24} className="text-blue-400 fill-blue-400" />
+            <div className="mb-7">
+              <div className="w-11 h-11 rounded-xl bg-violet-600 flex items-center justify-center mb-5 shadow-lg shadow-violet-600/25">
+                <Zap size={22} className="text-white fill-white" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1.5">
                 {type === "signin" ? "Welcome back" : "Create your account"}
               </h2>
-              <p className="text-sm text-white/40">
+              <p className="text-sm text-gray-500">
                 {type === "signin" 
-                  ? "Enter your details to access your workspace." 
-                  : "Start building and deploying AI models in minutes."}
+                  ? "Sign in to access your AutoMesh workspace." 
+                  : "Start automating your leads in minutes."}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
               {type === "signup" && (
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">Full Name</label>
-                  <div className="relative group">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-blue-400 transition-colors" size={16} />
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input 
                       type="text"
                       placeholder="John Doe"
-                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-blue-500/50 focus:bg-blue-500/5 transition-all"
+                      className="w-full h-11 bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all"
                     />
                   </div>
                 </div>
               )}
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">Username</label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-blue-400 transition-colors" size={16} />
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Username</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                   <input 
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     placeholder="Enter username"
-                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-blue-500/50 focus:bg-blue-500/5 transition-all"
+                    className="w-full h-11 bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">Password</label>
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-blue-400 transition-colors" size={16} />
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                   <input 
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-blue-500/50 focus:bg-blue-500/5 transition-all"
+                    className="w-full h-11 bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all"
                   />
                 </div>
               </div>
@@ -126,7 +141,7 @@ export default function AuthModal({ isOpen, onClose, type: initialType, onSucces
               <Button 
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 mt-4 h-12"
+                className="w-full h-11 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl shadow-sm mt-2"
               >
                 {loading ? (
                   <Loader2 className="animate-spin" size={20} />
@@ -139,10 +154,10 @@ export default function AuthModal({ isOpen, onClose, type: initialType, onSucces
               </Button>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-white/5 text-center">
+            <div className="mt-6 pt-5 border-t border-gray-100 text-center">
               <button 
                 onClick={() => setType(type === "signin" ? "signup" : "signin")}
-                className="text-sm text-white/40 hover:text-white transition-colors"
+                className="text-sm text-gray-500 hover:text-violet-600 transition-colors font-medium"
               >
                 {type === "signin" 
                   ? "Don't have an account? Sign up" 
