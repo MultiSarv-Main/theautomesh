@@ -97,21 +97,9 @@ export default function App() {
   };
 
   const handleLogin = async () => {
-    try {
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "rr", password: "sss" }),
-        credentials: 'include'
-      });
-      if (loginRes.ok) {
-        setUser(await loginRes.json());
-        toast.success("Welcome back!");
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error("Login failed");
-    }
+    // Session is already set by AuthModals — just refresh user state
+    await fetchUser();
+    toast.success("Welcome back!");
   };
 
   const handleLogout = async () => {

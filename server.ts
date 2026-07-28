@@ -67,13 +67,13 @@ async function startServer() {
   app.use(cookieParser());
   app.use(express.json());
   app.use(session({
-    secret: "leadflow-secret",
+    secret: process.env.SESSION_SECRET || "leadflow-change-me-in-production",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     name: 'leadflow.sid', 
     cookie: { 
-      secure: true, 
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000 
     }
@@ -87,29 +87,11 @@ async function startServer() {
     }
 
     if (req.path.startsWith('/api/') && !req.path.includes('debug/logs')) {
-      try {
-        let userId = (req.session as any)?.userId;
-        
-        // AUTO-AUTH FALLBACK: If no session in iframe, auto-login as demo user
-        if (!userId) {
-          const demoEmail = "rr";
-          let user = await prisma.user.findUnique({ where: { email: demoEmail } });
-          if (!user) {
-            user = await prisma.user.create({ data: { email: demoEmail, password: "sss" } });
-          }
-          (req.session as any).userId = user.id;
-          userId = user.id;
-          debugLog(`Auto-Login Triggered for ${req.path} (Session was missing)`);
-        }
-
+      const userId = (req.session as any)?.userId;
+      if (userId) {
         debugLog(`${req.method} ${req.path} - Session: YES (${userId})`);
-      } catch (err: any) {
-        debugLog(`Auth Middleware Error: ${err.message}`);
-        return res.status(500).json({ 
-          error: "Database configuration error", 
-          details: "The database connection failed. We have attempted to reset the instance. Please refresh.",
-          message: err.message
-        });
+      } else {
+        debugLog(`${req.method} ${req.path} - Session: NONE`);
       }
     }
     next();
@@ -736,9 +718,11 @@ async function startServer() {
 
   // Start background worker
   setInterval(async () => {
+    // Pick up to 5 pending jobs at a time, oldest first
     const jobs = await prisma.job.findMany({
       where: { status: "PENDING" },
-      take: 5
+      take: 5,
+      orderBy: { createdAt: "asc" }
     });
 
     for (const job of jobs) {
@@ -1008,11 +992,21 @@ async function startServer() {
 
         await prisma.job.update({ where: { id: job.id }, data: { status: "COMPLETED", updatedAt: new Date() } });
       } catch (error: any) {
-        console.error("Job Failed:", error);
+        const newAttempts = job.attempts + 1;
+        const shouldRetry = newAttempts < job.maxAttempts;
+        debugLog(`Job ${job.id} failed (attempt ${newAttempts}/${job.maxAttempts}): ${error.message}`);
         await prisma.job.update({
           where: { id: job.id },
-          data: { status: "FAILED", error: error.message, attempts: { increment: 1 }, updatedAt: new Date() }
+          data: { 
+            status: shouldRetry ? "PENDING" : "FAILED",
+            error: error.message,
+            attempts: { increment: 1 },
+            updatedAt: new Date()
+          }
         });
+        if (!shouldRetry) {
+          debugLog(`Job ${job.id} permanently failed after ${newAttempts} attempts.`);
+        }
       }
     }
   }, 10000); // Run every 10 seconds

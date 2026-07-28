@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Mail, Lock, User, Zap, ArrowRight, Loader2 } from "lucide-react";
+import { X, Mail, Lock, User, Zap, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AuthModalProps {
@@ -12,25 +12,33 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, type: initialType, onSuccess }: AuthModalProps) {
   const [type, setType] = useState(initialType);
-  const [email, setEmail] = useState("rr");
-  const [password, setPassword] = useState("sss");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        credentials: "include"
       });
       if (response.ok) {
         onSuccess(email);
+        onClose();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || "Login failed. Please try again.");
       }
     } catch (err) {
       console.error("Auth error:", err);
+      setError("Network error. Please check your connection.");
     }
     
     setLoading(false);
@@ -79,6 +87,12 @@ export default function AuthModal({ isOpen, onClose, type: initialType, onSucces
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
               {type === "signup" && (
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">Full Name</label>
