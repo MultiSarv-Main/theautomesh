@@ -17,7 +17,7 @@
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@fontsource-variable/geist": "^5.2.8",
-    "@google/genai": "^1.29.0",
+
     "@prisma/client": "^5.22.0",
     "@tailwindcss/vite": "^4.1.14",
     "@types/crypto-js": "^4.2.2",
